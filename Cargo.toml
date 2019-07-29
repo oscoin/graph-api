@@ -1,0 +1,8 @@
+[package]
+name = "graph-api"
+version = "0.1.0"
+authors = ["Alexis Sellier <alexis@monadic.xyz>"]
+edition = "2018"
+
+[dependencies]
+rand = "*"
