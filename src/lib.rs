@@ -3,14 +3,22 @@
 ///
 use rand::SeedableRng;
 
+use std::ops::Range;
+
 #[allow(dead_code)]
 /// A graph layer name.
-struct Layer(&'static str);
+pub struct Layer(&'static str);
+
+/// A handy type alias.
+pub type Id<T> = <T as GraphObject>::Id;
+
+/// A handy type alias.
+pub type Metadata<T> = <T as GraphObject>::Data;
 
 /// Abstract object in a graph, eg. node or edge.
-trait GraphObject {
+pub trait GraphObject {
     /// Identifier of all graph objects.
-    type Id;
+    type Id: Clone;
 
     /// Local graph object data.
     type Data;
@@ -26,31 +34,28 @@ trait GraphObject {
 }
 
 /// A graph  node.
-trait Node: GraphObject {
-    /// The edge type connected to this node.
-    type Edge: GraphObject;
-
+pub trait Node: GraphObject {
     /// Get connected nodes.
-    fn neighbors(&self) -> Iterator<Item = &Self>;
+    fn neighbors<N: Node>(&self) -> Nodes<N>;
 
     /// Get incoming and outgoing edges.
-    fn edges(&self) -> Iterator<Item = &Self::Edge>;
+    fn edges<E: Edge>(&self) -> Vec<E>;
 }
 
 /// A graph edge between two nodes.
-trait Edge: GraphObject {
+pub trait Edge: GraphObject {
     /// Get the edge weight.
     fn weight(&self) -> f64;
 
     /// The object from which the edge starts.
-    fn from(&self) -> <Self as GraphObject>::Id;
+    fn from<N: Node>(&self) -> N::Id;
 
     /// The object to which the edge points.
-    fn to(&self) -> <Self as GraphObject>::Id;
+    fn to<N: Node>(&self) -> N::Id;
 }
 
 /// The Graph API
-trait GraphAPI<G: Graph> {
+pub trait GraphAPI<G: Graph> {
     /// Entropy used to seed the CPRNG.
     type Entropy;
 
@@ -71,9 +76,9 @@ trait GraphAPI<G: Graph> {
 }
 
 /// A graph of nodes and edges.
-trait Graph {
+pub trait Graph {
     /// A graph node.
-    type Node: Node<Edge = Self::Edge>;
+    type Node: Node;
 
     /// A graph edge between nodes.
     type Edge: Edge;
@@ -93,11 +98,14 @@ trait Graph {
     /// Unlink two nodes.
     fn remove_edge<E: Edge>(&mut self, id: E::Id);
 
+    /// Get an edge.
+    fn get_edge<E: Edge>(&self, id: E::Id) -> Option<&Self::Edge>;
+
     /// Iterator over nodes.
-    fn iter(&self) -> Iterator<Item = &Self::Node>;
+    fn nodes(&self) -> Nodes<Self::Node>;
 
     /// Mutable iterator over nodes.
-    fn iter_mut(&mut self) -> Iterator<Item = &mut Self::Node>;
+    fn nodes_mut(&mut self) -> NodesMut<Self::Node>;
 
     /// Annotate a node with data.
     fn annotate_node<N: Node>(&mut self, node: N::Id, data: &N::Data);
@@ -107,7 +115,7 @@ trait Graph {
 }
 
 /// A graph algorithm over a graph.
-trait GraphAlgorithm<G: Graph> {
+pub trait GraphAlgorithm<G: Graph> {
     /// Some input state to the execution.
     type Input;
 
