@@ -3,8 +3,6 @@
 ///
 use rand::SeedableRng;
 
-use std::ops::Range;
-
 #[allow(dead_code)]
 /// A graph layer name.
 pub struct Layer(&'static str);
@@ -132,4 +130,28 @@ pub trait GraphAlgorithm<G: Graph> {
         graph: &mut G,
         rng: R,
     ) -> Result<Self::Output, Self::Error>;
+}
+
+pub struct Nodes<'a, N: 'a> {
+    pub range: std::vec::IntoIter<&'a N>,
+}
+
+pub struct NodesMut<'a, N: 'a> {
+    pub range: std::vec::IntoIter<&'a mut N>,
+}
+
+impl<'a, N: 'a> Iterator for Nodes<'a, N> {
+    type Item = &'a N;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.range.next()
+    }
+}
+
+impl<'a, N: 'a> Iterator for NodesMut<'a, N> {
+    type Item = &'a mut N;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.range.next()
+    }
 }
