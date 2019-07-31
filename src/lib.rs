@@ -28,32 +28,20 @@ pub trait GraphObject {
     fn data(&self) -> &Self::Data;
 
     /// Get mutable local data.
-    fn data_mut(&self) -> &mut Self::Data;
+    fn data_mut(&mut self) -> &mut Self::Data;
 }
 
 /// A graph  node.
-pub trait Node: GraphObject {
-    /// Get connected nodes.
-    fn neighbors<N: Node>(&self) -> Nodes<N>;
-
-    /// Get incoming and outgoing edges.
-    fn edges<E: Edge>(&self) -> Vec<E>;
-}
+pub trait Node: GraphObject {}
 
 /// A graph edge between two nodes.
 pub trait Edge: GraphObject {
     /// Get the edge weight.
     fn weight(&self) -> f64;
-
-    /// The object from which the edge starts.
-    fn from<N: Node>(&self) -> N::Id;
-
-    /// The object to which the edge points.
-    fn to<N: Node>(&self) -> N::Id;
 }
 
 /// The Graph API
-pub trait GraphAPI<G: Graph> {
+pub trait GraphAPI<G: GraphWriter + GraphAnnotator> {
     /// Entropy used to seed the CPRNG.
     type Entropy;
 
@@ -73,7 +61,44 @@ pub trait GraphAPI<G: Graph> {
     fn seed<R: SeedableRng>(&mut self, entropy: Self::Entropy) -> R::Seed;
 }
 
-/// A graph of nodes and edges.
+pub trait GraphWriter: Graph {
+    /// Add a node to the graph on the specified layer.
+    fn add_node(
+        &mut self,
+        id: <Self::Node as GraphObject>::Id,
+        data: <Self::Node as GraphObject>::Data,
+    );
+
+    /// Remove a node from the graph.
+    fn remove_node(&mut self, id: <Self::Node as GraphObject>::Id);
+
+    /// Link two nodes.
+    fn add_edge(&mut self, edge: Self::Edge, data: <Self::Edge as GraphObject>::Data);
+
+    /// Unlink two nodes.
+    fn remove_edge(&mut self, id: <Self::Edge as GraphObject>::Id);
+
+    /// Mutable iterator over nodes.
+    fn nodes_mut(&mut self) -> NodesMut<Self::Node>;
+}
+
+pub trait GraphAnnotator: Graph {
+    /// Annotate a node with data.
+    fn annotate_node(
+        &mut self,
+        node: <Self::Node as GraphObject>::Id,
+        data: &<Self::Node as GraphObject>::Data,
+    );
+
+    /// Annotate an edge with data.
+    fn annotate_edge(
+        &mut self,
+        edge: <Self::Edge as GraphObject>::Id,
+        data: &<Self::Edge as GraphObject>::Data,
+    );
+}
+
+/// A read-only graph of nodes and edges.
 pub trait Graph {
     /// A graph node.
     type Node: Node;
@@ -81,39 +106,24 @@ pub trait Graph {
     /// A graph edge between nodes.
     type Edge: Edge;
 
-    /// Add a node to the graph on the specified layer.
-    fn add_node<N: Node>(&mut self, id: N::Id, data: N::Data);
-
-    /// Remove a node from the graph.
-    fn remove_node<N: Node>(&mut self, id: N::Id);
-
     /// Get a node.
-    fn get_node<N: Node>(&self, id: N::Id) -> Option<&Self::Node>;
-
-    /// Link two nodes.
-    fn add_edge(&mut self, edge: Self::Edge, data: <Self::Edge as GraphObject>::Data);
-
-    /// Unlink two nodes.
-    fn remove_edge<E: Edge>(&mut self, id: E::Id);
+    fn get_node(&self, id: <Self::Node as GraphObject>::Id) -> Option<&Self::Node>;
 
     /// Get an edge.
-    fn get_edge<E: Edge>(&self, id: E::Id) -> Option<&Self::Edge>;
+    fn get_edge(&self, id: <Self::Edge as GraphObject>::Id) -> Option<&Self::Edge>;
 
     /// Iterator over nodes.
     fn nodes(&self) -> Nodes<Self::Node>;
 
-    /// Mutable iterator over nodes.
-    fn nodes_mut(&mut self) -> NodesMut<Self::Node>;
+    /// Get a node's neighbors.
+    fn neighbors(&self, node: <Self::Node as GraphObject>::Id) -> Nodes<Self::Node>;
 
-    /// Annotate a node with data.
-    fn annotate_node<N: Node>(&mut self, node: N::Id, data: &N::Data);
-
-    /// Annotate an edge with data.
-    fn annotate_edge<E: Edge>(&mut self, edge: E::Id, data: &E::Data);
+    /// Get a node's inbound and outbound edges.
+    fn edges(&self, node: <Self::Node as GraphObject>::Id) -> Vec<Self::Edge>;
 }
 
 /// A graph algorithm over a graph.
-pub trait GraphAlgorithm<G: Graph> {
+pub trait GraphAlgorithm<G: GraphAnnotator> {
     /// Some input state to the execution.
     type Input;
 
