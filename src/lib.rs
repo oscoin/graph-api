@@ -73,7 +73,14 @@ pub trait GraphWriter: Graph {
     fn remove_node(&mut self, id: <Self::Node as GraphObject>::Id);
 
     /// Link two nodes.
-    fn add_edge(&mut self, edge: Self::Edge, data: <Self::Edge as GraphObject>::Data);
+    fn add_edge(
+        &mut self,
+        id: <Self::Edge as GraphObject>::Id,
+        from: <Self::Node as GraphObject>::Id,
+        to: <Self::Node as GraphObject>::Id,
+        weight: f64,
+        data: <Self::Edge as GraphObject>::Data,
+    );
 
     /// Unlink two nodes.
     fn remove_edge(&mut self, id: <Self::Edge as GraphObject>::Id);
@@ -83,19 +90,17 @@ pub trait GraphWriter: Graph {
 }
 
 pub trait GraphAnnotator: Graph {
-    /// Annotate a node with data.
-    fn annotate_node(
+    /// Return a mutable reference to an edge's data, to annotate the edge.
+    fn edge_data_mut(
         &mut self,
-        node: <Self::Node as GraphObject>::Id,
-        data: &<Self::Node as GraphObject>::Data,
-    );
+        id: <Self::Edge as GraphObject>::Id,
+    ) -> Option<&mut <Self::Edge as GraphObject>::Data>;
 
-    /// Annotate an edge with data.
-    fn annotate_edge(
+    /// Return a mutable reference to a node's data, to annotate the node.
+    fn node_data_mut(
         &mut self,
-        edge: <Self::Edge as GraphObject>::Id,
-        data: &<Self::Edge as GraphObject>::Data,
-    );
+        id: <Self::Node as GraphObject>::Id,
+    ) -> Option<&mut <Self::Node as GraphObject>::Data>;
 }
 
 /// A read-only graph of nodes and edges.
