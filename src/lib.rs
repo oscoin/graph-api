@@ -5,7 +5,7 @@ use rand::SeedableRng;
 
 #[allow(dead_code)]
 /// A graph layer name.
-pub struct Layer(&'static str);
+pub struct Layer(pub &'static str);
 
 /// A handy type alias.
 pub type Id<T> = <T as GraphObject>::Id;
@@ -41,7 +41,10 @@ pub trait Edge<W>: GraphObject {
 }
 
 /// The Graph API
-pub trait GraphAPI<G: GraphWriter> {
+pub trait GraphAPI {
+    /// The underlying graph.
+    type Graph: GraphWriter;
+
     /// Entropy used to seed the CPRNG.
     type Entropy;
 
@@ -52,10 +55,10 @@ pub trait GraphAPI<G: GraphWriter> {
     fn remove_layer(&mut self, layer: &Layer);
 
     /// Return an immutable graph of the given layer.
-    fn graph(&self, layer: &Layer) -> Option<&G>;
+    fn graph(&self, layer: &Layer) -> Option<&Self::Graph>;
 
     /// Return the mutable graph of the given layer.
-    fn graph_mut(&mut self, layer: &Layer) -> Option<&mut G>;
+    fn graph_mut(&mut self, layer: &Layer) -> Option<&mut Self::Graph>;
 
     /// Given initial entropy, returns a random seed.
     fn seed<R: SeedableRng>(&mut self, entropy: Self::Entropy) -> R::Seed;
@@ -94,7 +97,7 @@ pub trait GraphDataWriter: Graph {
 }
 
 /// A read-only graph of nodes and edges.
-pub trait Graph {
+pub trait Graph: Default {
     /// A graph node.
     type Node: Node;
 
