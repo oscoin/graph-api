@@ -114,15 +114,17 @@ impl oscoin::Graph for Network {
         }
     }
 
-    fn edges(&self, node: <Self::Node as oscoin::GraphObject>::Id) -> Vec<Self::Edge> {
+    fn edges(&self, node: <Self::Node as oscoin::GraphObject>::Id) -> oscoin::Edges<Self::Edge> {
         let mut edges = Vec::new();
 
         for e in self.edges.values() {
             if e.from == node || e.to == node {
-                edges.push(e.clone());
+                edges.push(e);
             }
         }
-        edges
+        oscoin::Edges {
+            range: edges.into_iter(),
+        }
     }
 }
 

@@ -117,7 +117,7 @@ pub trait Graph {
     fn neighbors(&self, node: Id<Self::Node>) -> Nodes<Self::Node>;
 
     /// Get a node's inbound and outbound edges.
-    fn edges(&self, node: Id<Self::Node>) -> Vec<Self::Edge>;
+    fn edges(&self, node: Id<Self::Node>) -> Edges<Self::Edge>;
 }
 
 /// A graph algorithm over a graph.
@@ -138,6 +138,18 @@ pub trait GraphAlgorithm<G: GraphDataWriter> {
         graph: &mut G,
         rng: R,
     ) -> Result<Self::Output, Self::Error>;
+}
+
+pub struct Edges<'a, E: 'a> {
+    pub range: std::vec::IntoIter<&'a E>,
+}
+
+impl<'a, N: 'a> Iterator for Edges<'a, N> {
+    type Item = &'a N;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.range.next()
+    }
 }
 
 pub struct Nodes<'a, N: 'a> {
