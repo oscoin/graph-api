@@ -81,7 +81,7 @@ impl oscoin::Graph for Network {
     type Node = Node;
     type Weight = f64;
 
-    fn get_node(&self, id: <Node as oscoin::GraphObject>::Id) -> Option<&Self::Node> {
+    fn get_node(&self, id: oscoin::Id<Node>) -> Option<&Self::Node> {
         self.nodes.get(&id)
     }
 
@@ -129,25 +129,21 @@ impl oscoin::Graph for Network {
 }
 
 impl oscoin::GraphWriter for Network {
-    fn add_node(
-        &mut self,
-        id: <Node as oscoin::GraphObject>::Id,
-        data: <Node as oscoin::GraphObject>::Data,
-    ) {
+    fn add_node(&mut self, id: oscoin::Id<Node>, data: oscoin::Data<Node>) {
         self.nodes.insert(id, Node { id, data });
     }
 
-    fn remove_node(&mut self, id: <Node as oscoin::GraphObject>::Id) {
+    fn remove_node(&mut self, id: oscoin::Id<Node>) {
         self.nodes.remove(&id);
     }
 
     fn add_edge(
         &mut self,
-        id: <Edge as oscoin::GraphObject>::Id,
-        from: <Node as oscoin::GraphObject>::Id,
-        to: <Node as oscoin::GraphObject>::Id,
+        id: oscoin::Id<Edge>,
+        from: oscoin::Id<Node>,
+        to: oscoin::Id<Node>,
         weight: f64,
-        data: <Edge as oscoin::GraphObject>::Data,
+        data: oscoin::Data<Edge>,
     ) {
         self.edges.insert(
             id,
