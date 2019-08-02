@@ -125,8 +125,9 @@ pub trait Graph: Default {
 
 /// A graph algorithm over a graph.
 pub trait GraphAlgorithm<G: GraphDataWriter> {
-    /// Some input state to the execution.
-    type Input;
+    /// Mutable context of the execution.
+    /// Can be used as a stateful cache.
+    type Context;
 
     /// The output of the execution.
     type Output;
@@ -134,10 +135,12 @@ pub trait GraphAlgorithm<G: GraphDataWriter> {
     /// An execution error.
     type Error;
 
-    /// Execute an algorithm over an immutable input and mutable graph.
+    /// Execute an algorithm over a context and graph.
+    /// Changes to the context will be persisted across
+    /// executions of the algorithm.
     fn execute<R: SeedableRng>(
         &self,
-        input: &Self::Input,
+        context: &mut Self::Context,
         graph: &mut G,
         rng: R,
     ) -> Result<Self::Output, Self::Error>;
