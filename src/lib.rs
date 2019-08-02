@@ -140,6 +140,7 @@ pub trait GraphAlgorithm<G: GraphDataWriter> {
     ) -> Result<Self::Output, Self::Error>;
 }
 
+/// Iterator over edges.
 pub struct Edges<'a, E: 'a> {
     pub range: std::vec::IntoIter<&'a E>,
 }
@@ -152,10 +153,12 @@ impl<'a, N: 'a> Iterator for Edges<'a, N> {
     }
 }
 
+/// Iterator over nodes.
 pub struct Nodes<'a, N: 'a> {
     pub range: std::vec::IntoIter<&'a N>,
 }
 
+/// Iterator over mutable nodes.
 pub struct NodesMut<'a, N: 'a> {
     pub range: std::vec::IntoIter<&'a mut N>,
 }
