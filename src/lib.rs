@@ -11,7 +11,7 @@ pub struct Layer(&'static str);
 pub type Id<T> = <T as GraphObject>::Id;
 
 /// A handy type alias.
-pub type Metadata<T> = <T as GraphObject>::Data;
+pub type Data<T> = <T as GraphObject>::Data;
 
 /// Abstract object in a graph, eg. node or edge.
 pub trait GraphObject {
@@ -63,27 +63,23 @@ pub trait GraphAPI<G: GraphWriter + GraphAnnotator> {
 
 pub trait GraphWriter: Graph {
     /// Add a node to the graph on the specified layer.
-    fn add_node(
-        &mut self,
-        id: <Self::Node as GraphObject>::Id,
-        data: <Self::Node as GraphObject>::Data,
-    );
+    fn add_node(&mut self, id: Id<Self::Node>, data: Data<Self::Node>);
 
     /// Remove a node from the graph.
-    fn remove_node(&mut self, id: <Self::Node as GraphObject>::Id);
+    fn remove_node(&mut self, id: Id<Self::Node>);
 
     /// Link two nodes.
     fn add_edge(
         &mut self,
-        id: <Self::Edge as GraphObject>::Id,
-        from: <Self::Node as GraphObject>::Id,
-        to: <Self::Node as GraphObject>::Id,
+        id: Id<Self::Edge>,
+        from: Id<Self::Node>,
+        to: Id<Self::Node>,
         weight: f64,
-        data: <Self::Edge as GraphObject>::Data,
+        data: Data<Self::Edge>,
     );
 
     /// Unlink two nodes.
-    fn remove_edge(&mut self, id: <Self::Edge as GraphObject>::Id);
+    fn remove_edge(&mut self, id: Id<Self::Edge>);
 
     /// Mutable iterator over nodes.
     fn nodes_mut(&mut self) -> NodesMut<Self::Node>;
@@ -91,16 +87,10 @@ pub trait GraphWriter: Graph {
 
 pub trait GraphAnnotator: Graph {
     /// Return a mutable reference to an edge's data, to annotate the edge.
-    fn edge_data_mut(
-        &mut self,
-        id: <Self::Edge as GraphObject>::Id,
-    ) -> Option<&mut <Self::Edge as GraphObject>::Data>;
+    fn edge_data_mut(&mut self, id: Id<Self::Edge>) -> Option<&mut Data<Self::Edge>>;
 
     /// Return a mutable reference to a node's data, to annotate the node.
-    fn node_data_mut(
-        &mut self,
-        id: <Self::Node as GraphObject>::Id,
-    ) -> Option<&mut <Self::Node as GraphObject>::Data>;
+    fn node_data_mut(&mut self, id: Id<Self::Node>) -> Option<&mut Data<Self::Node>>;
 }
 
 /// A read-only graph of nodes and edges.
@@ -115,19 +105,19 @@ pub trait Graph {
     type Weight;
 
     /// Get a node.
-    fn get_node(&self, id: <Self::Node as GraphObject>::Id) -> Option<&Self::Node>;
+    fn get_node(&self, id: Id<Self::Node>) -> Option<&Self::Node>;
 
     /// Get an edge.
-    fn get_edge(&self, id: <Self::Edge as GraphObject>::Id) -> Option<&Self::Edge>;
+    fn get_edge(&self, id: Id<Self::Edge>) -> Option<&Self::Edge>;
 
     /// Iterator over nodes.
     fn nodes(&self) -> Nodes<Self::Node>;
 
     /// Get a node's neighbors.
-    fn neighbors(&self, node: <Self::Node as GraphObject>::Id) -> Nodes<Self::Node>;
+    fn neighbors(&self, node: Id<Self::Node>) -> Nodes<Self::Node>;
 
     /// Get a node's inbound and outbound edges.
-    fn edges(&self, node: <Self::Node as GraphObject>::Id) -> Vec<Self::Edge>;
+    fn edges(&self, node: Id<Self::Node>) -> Vec<Self::Edge>;
 }
 
 /// A graph algorithm over a graph.
