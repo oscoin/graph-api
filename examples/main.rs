@@ -22,7 +22,7 @@ pub struct Edge {
     weight: f64,
 }
 
-impl oscoin::Edge for Edge {
+impl oscoin::Edge<f64> for Edge {
     fn weight(&self) -> f64 {
         self.weight
     }
@@ -79,6 +79,7 @@ impl Network {
 impl oscoin::Graph for Network {
     type Edge = Edge;
     type Node = Node;
+    type Weight = f64;
 
     fn get_node(&self, id: <Node as oscoin::GraphObject>::Id) -> Option<&Self::Node> {
         self.nodes.get(&id)

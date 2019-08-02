@@ -35,9 +35,9 @@ pub trait GraphObject {
 pub trait Node: GraphObject {}
 
 /// A graph edge between two nodes.
-pub trait Edge: GraphObject {
+pub trait Edge<W>: GraphObject {
     /// Get the edge weight.
-    fn weight(&self) -> f64;
+    fn weight(&self) -> W;
 }
 
 /// The Graph API
@@ -109,7 +109,10 @@ pub trait Graph {
     type Node: Node;
 
     /// A graph edge between nodes.
-    type Edge: Edge;
+    type Edge: Edge<Self::Weight>;
+
+    /// An edge weight.
+    type Weight;
 
     /// Get a node.
     fn get_node(&self, id: <Self::Node as GraphObject>::Id) -> Option<&Self::Node>;
