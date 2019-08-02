@@ -41,7 +41,7 @@ pub trait Edge<W>: GraphObject {
 }
 
 /// The Graph API
-pub trait GraphAPI<G: GraphWriter + GraphAnnotator> {
+pub trait GraphAPI<G: GraphWriter> {
     /// Entropy used to seed the CPRNG.
     type Entropy;
 
@@ -61,7 +61,7 @@ pub trait GraphAPI<G: GraphWriter + GraphAnnotator> {
     fn seed<R: SeedableRng>(&mut self, entropy: Self::Entropy) -> R::Seed;
 }
 
-pub trait GraphWriter: Graph {
+pub trait GraphWriter: Graph + GraphDataWriter {
     /// Add a node to the graph on the specified layer.
     fn add_node(&mut self, id: Id<Self::Node>, data: Data<Self::Node>);
 
@@ -85,7 +85,7 @@ pub trait GraphWriter: Graph {
     fn nodes_mut(&mut self) -> NodesMut<Self::Node>;
 }
 
-pub trait GraphAnnotator: Graph {
+pub trait GraphDataWriter: Graph {
     /// Return a mutable reference to an edge's data, to annotate the edge.
     fn edge_data_mut(&mut self, id: Id<Self::Edge>) -> Option<&mut Data<Self::Edge>>;
 
@@ -121,7 +121,7 @@ pub trait Graph {
 }
 
 /// A graph algorithm over a graph.
-pub trait GraphAlgorithm<G: GraphAnnotator> {
+pub trait GraphAlgorithm<G: GraphDataWriter> {
     /// Some input state to the execution.
     type Input;
 

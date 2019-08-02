@@ -171,7 +171,7 @@ impl oscoin::GraphWriter for Network {
     }
 }
 
-impl oscoin::GraphAnnotator for Network {
+impl oscoin::GraphDataWriter for Network {
     fn edge_data_mut(
         &mut self,
         id: <Self::Edge as oscoin::GraphObject>::Id,
@@ -188,7 +188,7 @@ impl oscoin::GraphAnnotator for Network {
 }
 
 fn main() {
-    use oscoin::{Graph, GraphAnnotator, GraphWriter};
+    use oscoin::{Graph, GraphDataWriter, GraphWriter};
 
     let mut g = Network::new();
     g.add_node('a', "A".to_owned());
