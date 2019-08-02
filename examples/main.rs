@@ -257,9 +257,10 @@ mod ledger {
             contribs: &[Contrib],
         ) {
             // The node-id must be unique for all (project-id, project-hash) pairs.
-            // let node_id = H256::new(&[id.bytes(), hash.bytes()]);
+            // TODO
             let node_id = id;
 
+            // Get a mutable ref to the osrank graph.
             let graph = self.api.graph_mut(&oscoin::Layer("osrank")).unwrap();
 
             // Add the new checkpoint node to the graph. We annotate it with the project
