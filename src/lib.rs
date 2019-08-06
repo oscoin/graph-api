@@ -32,18 +32,18 @@ pub trait GraphObject {
 }
 
 /// A graph  node.
-pub trait Node: GraphObject {}
+pub trait Node<N>: GraphObject<Data = N> {}
 
 /// A graph edge between two nodes.
-pub trait Edge<W>: GraphObject {
+pub trait Edge<W, E>: GraphObject<Data = E> {
     /// Get the edge weight.
     fn weight(&self) -> W;
 }
 
 /// The Graph API
-pub trait GraphAPI {
+pub trait GraphAPI<N, E> {
     /// The underlying graph.
-    type Graph: GraphWriter;
+    type Graph: GraphWriter<N, E>;
 
     /// Entropy used to seed the CPRNG.
     type Entropy;
@@ -64,7 +64,7 @@ pub trait GraphAPI {
     fn seed<R: SeedableRng>(&mut self, entropy: Self::Entropy) -> R::Seed;
 }
 
-pub trait GraphWriter: Graph + GraphDataWriter {
+pub trait GraphWriter<N, E>: Graph<N, E> + GraphDataWriter<N, E> {
     /// Add a node to the graph on the specified layer.
     fn add_node(&mut self, id: Id<Self::Node>, data: Data<Self::Node>);
 
@@ -88,7 +88,7 @@ pub trait GraphWriter: Graph + GraphDataWriter {
     fn nodes_mut(&mut self) -> NodesMut<Self::Node>;
 }
 
-pub trait GraphDataWriter: Graph {
+pub trait GraphDataWriter<N, E>: Graph<N, E> {
     /// Return a mutable reference to an edge's data, to annotate the edge.
     fn edge_data_mut(&mut self, id: Id<Self::Edge>) -> Option<&mut Data<Self::Edge>>;
 
@@ -97,12 +97,12 @@ pub trait GraphDataWriter: Graph {
 }
 
 /// A read-only graph of nodes and edges.
-pub trait Graph: Default {
+pub trait Graph<N, E>: Default {
     /// A graph node.
-    type Node: Node;
+    type Node: Node<N>;
 
     /// A graph edge between nodes.
-    type Edge: Edge<Self::Weight>;
+    type Edge: Edge<Self::Weight, E>;
 
     /// An edge weight.
     type Weight;
@@ -124,7 +124,10 @@ pub trait Graph: Default {
 }
 
 /// A graph algorithm over a graph.
-pub trait GraphAlgorithm<G: GraphDataWriter> {
+pub trait GraphAlgorithm<G, N, E>
+where
+    G: GraphDataWriter<N, E>,
+{
     /// Mutable context of the execution.
     /// Can be used as a stateful cache.
     /// The first time `execute` is called,

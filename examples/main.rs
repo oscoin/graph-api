@@ -8,24 +8,28 @@ type Id = u64;
 /// Byte string.
 type Bytes = Vec<u8>;
 
+type NodeData = Vec<(&'static str, Bytes)>;
+
+type EdgeData = Bytes;
+
 #[derive(PartialEq, Debug, Clone)]
 pub struct Node {
     id: Id,
-    data: Vec<(&'static str, Bytes)>,
+    data: NodeData,
 }
 
-impl oscoin::Node for Node {}
+impl oscoin::Node<NodeData> for Node {}
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Edge {
     id: Id,
     from: Id,
     to: Id,
-    data: Vec<u8>,
+    data: EdgeData,
     weight: f64,
 }
 
-impl oscoin::Edge<f64> for Edge {
+impl oscoin::Edge<f64, EdgeData> for Edge {
     fn weight(&self) -> f64 {
         self.weight
     }
@@ -33,7 +37,7 @@ impl oscoin::Edge<f64> for Edge {
 
 impl oscoin::GraphObject for Edge {
     type Id = Id;
-    type Data = Vec<u8>;
+    type Data = EdgeData;
 
     fn id(&self) -> Id {
         self.id
@@ -50,7 +54,7 @@ impl oscoin::GraphObject for Edge {
 
 impl oscoin::GraphObject for Node {
     type Id = Id;
-    type Data = Vec<(&'static str, Bytes)>;
+    type Data = NodeData;
 
     fn id(&self) -> Id {
         self.id
@@ -79,7 +83,7 @@ impl Default for Network {
     }
 }
 
-impl oscoin::Graph for Network {
+impl oscoin::Graph<NodeData, EdgeData> for Network {
     type Edge = Edge;
     type Node = Node;
     type Weight = f64;
@@ -131,8 +135,8 @@ impl oscoin::Graph for Network {
     }
 }
 
-impl oscoin::GraphWriter for Network {
-    fn add_node(&mut self, id: oscoin::Id<Node>, data: oscoin::Data<Node>) {
+impl oscoin::GraphWriter<NodeData, EdgeData> for Network {
+    fn add_node(&mut self, id: oscoin::Id<Node>, data: NodeData) {
         self.nodes.insert(id, Node { id, data });
     }
 
@@ -146,7 +150,7 @@ impl oscoin::GraphWriter for Network {
         from: oscoin::Id<Node>,
         to: oscoin::Id<Node>,
         weight: f64,
-        data: oscoin::Data<Edge>,
+        data: EdgeData,
     ) {
         self.edges.insert(
             id,
@@ -172,18 +176,18 @@ impl oscoin::GraphWriter for Network {
     }
 }
 
-impl oscoin::GraphDataWriter for Network {
+impl oscoin::GraphDataWriter<NodeData, EdgeData> for Network {
     fn edge_data_mut(
         &mut self,
         id: <Self::Edge as oscoin::GraphObject>::Id,
-    ) -> Option<&mut <Self::Edge as oscoin::GraphObject>::Data> {
+    ) -> Option<&mut EdgeData> {
         self.edges.get_mut(&id).map(|e| &mut e.data)
     }
 
     fn node_data_mut(
         &mut self,
         id: <Self::Node as oscoin::GraphObject>::Id,
-    ) -> Option<&mut <Self::Node as oscoin::GraphObject>::Data> {
+    ) -> Option<&mut NodeData> {
         self.nodes.get_mut(&id).map(|n| &mut n.data)
     }
 }
@@ -246,7 +250,7 @@ mod ledger {
 
     impl<T> Ledger<T>
     where
-        T: oscoin::GraphAPI<Graph = super::Network>,
+        T: oscoin::GraphAPI<super::NodeData, super::EdgeData, Graph = super::Network>,
     {
         fn checkpoint(
             &mut self,
