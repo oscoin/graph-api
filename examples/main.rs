@@ -3,13 +3,16 @@ use oscoin_graph_api as oscoin;
 
 use std::collections::BTreeMap;
 
+/// Id shared by all objects.
 type Id = u64;
 
 /// Byte string.
 type Bytes = Vec<u8>;
 
+/// Data stored in nodes.
 type NodeData = Vec<(&'static str, Bytes)>;
 
+/// Data stored in edges.
 type EdgeData = Bytes;
 
 #[derive(PartialEq, Debug, Clone)]
@@ -83,9 +86,13 @@ impl Default for Network {
     }
 }
 
-impl oscoin::Graph<NodeData, EdgeData> for Network {
-    type Edge = Edge;
-    type Node = Node;
+impl oscoin::Graph for Network {
+    type Node = self::Node;
+    type Edge = self::Edge;
+
+    type NodeData = self::NodeData;
+    type EdgeData = self::EdgeData;
+
     type Weight = f64;
 
     fn get_node(&self, id: oscoin::Id<Node>) -> Option<&Self::Node> {
@@ -135,7 +142,7 @@ impl oscoin::Graph<NodeData, EdgeData> for Network {
     }
 }
 
-impl oscoin::GraphWriter<NodeData, EdgeData> for Network {
+impl oscoin::GraphWriter for Network {
     fn add_node(&mut self, id: oscoin::Id<Node>, data: NodeData) {
         self.nodes.insert(id, Node { id, data });
     }
@@ -176,7 +183,7 @@ impl oscoin::GraphWriter<NodeData, EdgeData> for Network {
     }
 }
 
-impl oscoin::GraphDataWriter<NodeData, EdgeData> for Network {
+impl oscoin::GraphDataWriter for Network {
     fn edge_data_mut(
         &mut self,
         id: <Self::Edge as oscoin::GraphObject>::Id,
@@ -250,7 +257,7 @@ mod ledger {
 
     impl<T> Ledger<T>
     where
-        T: oscoin::GraphAPI<super::NodeData, super::EdgeData, Graph = super::Network>,
+        T: oscoin::GraphAPI<Graph = super::Network>,
     {
         fn checkpoint(
             &mut self,
