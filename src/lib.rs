@@ -127,7 +127,9 @@ pub trait Graph: Default {
 pub trait GraphAlgorithm<G: GraphDataWriter> {
     /// Mutable context of the execution.
     /// Can be used as a stateful cache.
-    type Context;
+    /// The first time `execute` is called,
+    /// `Context::default()` is passed in.
+    type Context: Default;
 
     /// The output of the execution.
     type Output;
