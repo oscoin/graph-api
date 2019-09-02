@@ -16,13 +16,13 @@ pub type Data<T> = <T as GraphObject>::Data;
 /// Abstract object in a graph, eg. node or edge.
 pub trait GraphObject {
     /// Identifier of all graph objects.
-    type Id: Clone;
+    type Id;
 
     /// Local graph object data.
     type Data;
 
     /// Return the edge id.
-    fn id(&self) -> Self::Id;
+    fn id(&self) -> &Self::Id;
 
     /// Get local data.
     fn data(&self) -> &Self::Data;
@@ -75,9 +75,9 @@ pub trait GraphWriter: Graph + GraphDataWriter {
     fn add_edge(
         &mut self,
         id: Id<Self::Edge>,
-        from: Id<Self::Node>,
-        to: Id<Self::Node>,
-        weight: f64,
+        from: &Id<Self::Node>,
+        to: &Id<Self::Node>,
+        weight: Self::Weight,
         data: Data<Self::Edge>,
     );
 
@@ -90,10 +90,10 @@ pub trait GraphWriter: Graph + GraphDataWriter {
 
 pub trait GraphDataWriter: Graph {
     /// Return a mutable reference to an edge's data, to annotate the edge.
-    fn edge_data_mut(&mut self, id: Id<Self::Edge>) -> Option<&mut Data<Self::Edge>>;
+    fn edge_data_mut(&mut self, id: &Id<Self::Edge>) -> Option<&mut Data<Self::Edge>>;
 
     /// Return a mutable reference to a node's data, to annotate the node.
-    fn node_data_mut(&mut self, id: Id<Self::Node>) -> Option<&mut Data<Self::Node>>;
+    fn node_data_mut(&mut self, id: &Id<Self::Node>) -> Option<&mut Data<Self::Node>>;
 }
 
 /// A read-only graph of nodes and edges.
@@ -114,19 +114,19 @@ pub trait Graph: Default {
     type Weight;
 
     /// Get a node.
-    fn get_node(&self, id: Id<Self::Node>) -> Option<&Self::Node>;
+    fn get_node(&self, id: &Id<Self::Node>) -> Option<&Self::Node>;
 
     /// Get an edge.
-    fn get_edge(&self, id: Id<Self::Edge>) -> Option<&Self::Edge>;
+    fn get_edge(&self, id: &Id<Self::Edge>) -> Option<&Self::Edge>;
 
     /// Iterator over nodes.
     fn nodes(&self) -> Nodes<Self::Node>;
 
     /// Get a node's neighbors.
-    fn neighbors(&self, node: Id<Self::Node>) -> Nodes<Self::Node>;
+    fn neighbors(&self, node: &Id<Self::Node>) -> EdgeRefs<Id<Self::Node>, Id<Self::Edge>>;
 
     /// Get a node's inbound and outbound edges.
-    fn edges(&self, node: Id<Self::Node>) -> Edges<Self::Edge>;
+    fn edges(&self, node: &Id<Self::Node>) -> Edges<Self::Edge>;
 }
 
 /// A graph algorithm over a graph.
@@ -195,3 +195,14 @@ impl<'a, N: 'a> Iterator for NodesMut<'a, N> {
         self.range.next()
     }
 }
+
+/// Iterator over edge _references_, which keep track of the source and
+/// target.
+#[derive(Debug)]
+pub struct EdgeRef<'a, NodeId, EdgeId> {
+    pub from: &'a NodeId,
+    pub to: &'a NodeId,
+    pub id: &'a EdgeId,
+}
+
+pub type EdgeRefs<'a, N, E> = Vec<EdgeRef<'a, N, E>>;
