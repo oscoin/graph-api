@@ -123,7 +123,7 @@ pub trait Graph: Default {
     fn nodes(&self) -> Nodes<Self::Node>;
 
     /// Get a node's neighbors.
-    fn neighbors(&self, node: Id<Self::Node>) -> Nodes<Self::Node>;
+    fn neighbors(&self, node: &Id<Self::Node>) -> EdgeReferences<Id<Self::Node>, Id<Self::Edge>>;
 
     /// Get a node's inbound and outbound edges.
     fn edges(&self, node: Id<Self::Node>) -> Edges<Self::Edge>;
@@ -195,3 +195,14 @@ impl<'a, N: 'a> Iterator for NodesMut<'a, N> {
         self.range.next()
     }
 }
+
+/// Iterator over edge _references_, which keep track of the source and
+/// target.
+#[derive(Debug)]
+pub struct EdgeReference<'a, NodeId, EdgeId> {
+    pub source: &'a NodeId,
+    pub target: &'a NodeId,
+    pub id: &'a EdgeId,
+}
+
+pub type EdgeReferences<'a, N, E> = Vec<EdgeReference<'a, N, E>>;
