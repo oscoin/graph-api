@@ -77,7 +77,7 @@ pub trait GraphWriter: Graph + GraphDataWriter {
         id: Id<Self::Edge>,
         from: Id<Self::Node>,
         to: Id<Self::Node>,
-        weight: f64,
+        weight: Self::Weight,
         data: Data<Self::Edge>,
     );
 
