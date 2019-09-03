@@ -139,7 +139,7 @@ where
     /// An execution error.
     type Error;
 
-    /// A `Seed`, suitable to generate a `Rng`.
+    /// A seed suitable for an RNG.
     type RngSeed;
 
     /// Execute an algorithm over a context and graph.
