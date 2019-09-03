@@ -149,7 +149,7 @@ where
         &self,
         context: &mut Self::Context,
         graph: &mut G,
-        initial_seed: Self::RngSeed,
+        seed: Self::RngSeed,
     ) -> Result<Self::Output, Self::Error>;
 }
 
