@@ -42,8 +42,8 @@ impl oscoin::GraphObject for Edge {
     type Id = Id;
     type Data = EdgeData;
 
-    fn id(&self) -> Id {
-        self.id
+    fn id(&self) -> &Id {
+        &self.id
     }
 
     fn data(&self) -> &Self::Data {
@@ -59,8 +59,8 @@ impl oscoin::GraphObject for Node {
     type Id = Id;
     type Data = NodeData;
 
-    fn id(&self) -> Id {
-        self.id
+    fn id(&self) -> &Id {
+        &self.id
     }
 
     fn data(&self) -> &Self::Data {
@@ -95,12 +95,12 @@ impl oscoin::Graph for Network {
 
     type Weight = f64;
 
-    fn get_node(&self, id: oscoin::Id<Node>) -> Option<&Self::Node> {
-        self.nodes.get(&id)
+    fn get_node(&self, id: &oscoin::Id<Node>) -> Option<&Self::Node> {
+        self.nodes.get(id)
     }
 
-    fn get_edge(&self, id: <Self::Edge as oscoin::GraphObject>::Id) -> Option<&Self::Edge> {
-        self.edges.get(&id)
+    fn get_edge(&self, id: &<Self::Edge as oscoin::GraphObject>::Id) -> Option<&Self::Edge> {
+        self.edges.get(id)
     }
 
     fn nodes(&self) -> oscoin::Nodes<Self::Node> {
@@ -112,27 +112,28 @@ impl oscoin::Graph for Network {
 
     fn neighbors(
         &self,
-        node: <Self::Node as oscoin::GraphObject>::Id,
-    ) -> oscoin::Nodes<Self::Node> {
-        let mut ns: Vec<&Node> = Vec::new();
+        node: &<Self::Node as oscoin::GraphObject>::Id,
+    ) -> oscoin::EdgeRefs<oscoin::Id<Self::Node>, oscoin::Id<Self::Edge>> {
+        let mut refs = Vec::new();
 
         for e in self.edges.values() {
-            if e.from == node {
-                ns.push(self.nodes.get(&e.to).unwrap());
-            } else if e.to == node {
-                ns.push(self.nodes.get(&e.from).unwrap());
+            if e.from == *node {
+                refs.push(oscoin::EdgeRef {
+                    from: &e.from,
+                    to: &e.to,
+                    id: &e.id,
+                })
             }
         }
-        oscoin::Nodes {
-            range: ns.into_iter(),
-        }
+
+        refs
     }
 
-    fn edges(&self, node: <Self::Node as oscoin::GraphObject>::Id) -> oscoin::Edges<Self::Edge> {
+    fn edges(&self, node: &<Self::Node as oscoin::GraphObject>::Id) -> oscoin::Edges<Self::Edge> {
         let mut edges = Vec::new();
 
         for e in self.edges.values() {
-            if e.from == node || e.to == node {
+            if e.from == *node || e.to == *node {
                 edges.push(e);
             }
         }
@@ -154,8 +155,8 @@ impl oscoin::GraphWriter for Network {
     fn add_edge(
         &mut self,
         id: oscoin::Id<Edge>,
-        from: oscoin::Id<Node>,
-        to: oscoin::Id<Node>,
+        from: &oscoin::Id<Node>,
+        to: &oscoin::Id<Node>,
         weight: f64,
         data: EdgeData,
     ) {
@@ -163,8 +164,8 @@ impl oscoin::GraphWriter for Network {
             id,
             Edge {
                 id,
-                from,
-                to,
+                from: *from,
+                to: *to,
                 weight,
                 data,
             },
@@ -186,16 +187,16 @@ impl oscoin::GraphWriter for Network {
 impl oscoin::GraphDataWriter for Network {
     fn edge_data_mut(
         &mut self,
-        id: <Self::Edge as oscoin::GraphObject>::Id,
+        id: &<Self::Edge as oscoin::GraphObject>::Id,
     ) -> Option<&mut EdgeData> {
-        self.edges.get_mut(&id).map(|e| &mut e.data)
+        self.edges.get_mut(id).map(|e| &mut e.data)
     }
 
     fn node_data_mut(
         &mut self,
-        id: <Self::Node as oscoin::GraphObject>::Id,
+        id: &<Self::Node as oscoin::GraphObject>::Id,
     ) -> Option<&mut NodeData> {
-        self.nodes.get_mut(&id).map(|n| &mut n.data)
+        self.nodes.get_mut(id).map(|n| &mut n.data)
     }
 }
 
@@ -205,15 +206,18 @@ fn main() {
     let mut g = Network::default();
     g.add_node(0x1, vec![("A", Vec::new())]);
     g.add_node(0x2, vec![("B", Vec::new())]);
-    g.add_edge(0x3, 0x1, 0x2, 1.0, vec![]);
+    g.add_edge(0x3, &0x1, &0x2, 1.0, vec![]);
 
     assert_eq!(
-        g.neighbors(0x1).collect::<Vec<&Node>>(),
-        vec![g.get_node(0x2).unwrap()]
+        g.neighbors(&0x1)
+            .into_iter()
+            .map(|eref| g.get_node(eref.from))
+            .collect::<Vec<Option<&Node>>>(),
+        vec![g.get_node(&0x2)]
     );
 
-    *g.node_data_mut(0x1).unwrap() = vec![("AA", Vec::new())];
-    assert_eq!(g.get_node(0x1).unwrap().data, vec![("AA", Vec::new())]);
+    *g.node_data_mut(&0x1).unwrap() = vec![("AA", Vec::new())];
+    assert_eq!(g.get_node(&0x1).unwrap().data, vec![("AA", Vec::new())]);
 }
 
 mod ledger {
@@ -289,8 +293,8 @@ mod ledger {
                 if d.is_added {
                     graph.add_edge(
                         edge_id,
-                        node_id,
-                        d.node_id,
+                        &node_id,
+                        &d.node_id,
                         1.0,
                         vec![EdgeType::Dependency as u8],
                     );
@@ -303,16 +307,16 @@ mod ledger {
                 // Add `project -> contribution` link.
                 graph.add_edge(
                     self::edge_id(node_id, c.node_id),
-                    node_id,
-                    c.node_id,
+                    &node_id,
+                    &c.node_id,
                     EdgeType::ContributionFrom.weight(),
                     vec![EdgeType::ContributionFrom as u8],
                 );
                 // Add `contribution -> project` link.
                 graph.add_edge(
                     self::edge_id(node_id, c.node_id),
-                    c.node_id,
-                    node_id,
+                    &c.node_id,
+                    &node_id,
                     EdgeType::ContributionTo.weight(),
                     vec![EdgeType::ContributionTo as u8],
                 );
