@@ -1,7 +1,6 @@
 #[deny(clippy::all)]
 ///! Graph API Traits
 ///
-use rand::SeedableRng;
 
 #[allow(dead_code)]
 /// A graph layer name.
@@ -45,9 +44,6 @@ pub trait GraphAPI {
     /// The underlying graph.
     type Graph: GraphWriter;
 
-    /// Entropy used to seed the CPRNG.
-    type Entropy;
-
     /// Add a graph layer.
     fn add_layer(&mut self, layer: Layer);
 
@@ -59,9 +55,6 @@ pub trait GraphAPI {
 
     /// Return the mutable graph of the given layer.
     fn graph_mut(&mut self, layer: &Layer) -> Option<&mut Self::Graph>;
-
-    /// Given initial entropy, returns a random seed.
-    fn seed<R: SeedableRng>(&mut self, entropy: Self::Entropy) -> R::Seed;
 }
 
 pub trait GraphWriter: Graph + GraphDataWriter {
@@ -146,14 +139,17 @@ where
     /// An execution error.
     type Error;
 
+    /// A seed suitable for an RNG.
+    type RngSeed;
+
     /// Execute an algorithm over a context and graph.
     /// Changes to the context will be persisted across
     /// executions of the algorithm.
-    fn execute<R: SeedableRng>(
+    fn execute(
         &self,
         context: &mut Self::Context,
         graph: &mut G,
-        rng: R,
+        seed: Self::RngSeed,
     ) -> Result<Self::Output, Self::Error>;
 }
 
