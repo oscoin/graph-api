@@ -3,6 +3,14 @@
 ///
 
 #[allow(dead_code)]
+
+/// Specifies a direction for an edge.
+#[derive(Debug, PartialEq, Eq)]
+pub enum Direction {
+    Outgoing,
+    Incoming,
+}
+
 /// A graph layer name.
 pub struct Layer(pub &'static str);
 
@@ -116,10 +124,18 @@ pub trait Graph: Default {
     fn nodes(&self) -> Nodes<Self::Node>;
 
     /// Get a node's neighbors.
-    fn neighbors(&self, node: &Id<Self::Node>) -> EdgeRefs<Id<Self::Node>, Id<Self::Edge>>;
+    fn neighbors(&self, node: &Id<Self::Node>) -> Nodes<Self::Node>;
 
     /// Get a node's inbound and outbound edges.
     fn edges(&self, node: &Id<Self::Node>) -> Edges<Self::Edge>;
+
+    /// Get a node's *directed* edges by passing a `Direction` as input.
+    /// This is a slightly more specialised version of `edges`.
+    fn edges_directed(
+        &self,
+        node: &Id<Self::Node>,
+        dir: Direction,
+    ) -> EdgeRefs<Id<Self::Node>, Id<Self::Edge>>;
 }
 
 /// A graph algorithm over a graph.

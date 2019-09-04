@@ -113,20 +113,20 @@ impl oscoin::Graph for Network {
     fn neighbors(
         &self,
         node: &<Self::Node as oscoin::GraphObject>::Id,
-    ) -> oscoin::EdgeRefs<oscoin::Id<Self::Node>, oscoin::Id<Self::Edge>> {
-        let mut refs = Vec::new();
+    ) -> oscoin::Nodes<Self::Node> {
+        let mut ns: Vec<&Node> = Vec::new();
 
         for e in self.edges.values() {
             if e.from == *node {
-                refs.push(oscoin::EdgeRef {
-                    from: &e.from,
-                    to: &e.to,
-                    id: &e.id,
-                })
+                ns.push(self.nodes.get(&e.to).unwrap());
+            } else if e.to == *node {
+                ns.push(self.nodes.get(&e.from).unwrap());
             }
         }
 
-        refs
+        oscoin::Nodes {
+            range: ns.into_iter(),
+        }
     }
 
     fn edges(&self, node: &<Self::Node as oscoin::GraphObject>::Id) -> oscoin::Edges<Self::Edge> {
@@ -140,6 +140,32 @@ impl oscoin::Graph for Network {
         oscoin::Edges {
             range: edges.into_iter(),
         }
+    }
+
+    fn edges_directed(
+        &self,
+        node: &<Self::Node as oscoin::GraphObject>::Id,
+        dir: oscoin::Direction,
+    ) -> oscoin::EdgeRefs<oscoin::Id<Self::Node>, oscoin::Id<Self::Edge>> {
+        let mut refs = Vec::new();
+
+        for e in self.edges.values() {
+            if dir == oscoin::Direction::Outgoing && e.from == *node {
+                refs.push(oscoin::EdgeRef {
+                    from: &e.from,
+                    to: &e.to,
+                    id: &e.id,
+                })
+            } else if dir == oscoin::Direction::Incoming && e.to == *node {
+                refs.push(oscoin::EdgeRef {
+                    from: &e.from,
+                    to: &e.to,
+                    id: &e.id,
+                })
+            }
+        }
+
+        refs
     }
 }
 
@@ -209,11 +235,16 @@ fn main() {
     g.add_edge(0x3, &0x1, &0x2, 1.0, vec![]);
 
     assert_eq!(
-        g.neighbors(&0x1)
+        g.neighbors(&0x1).collect::<Vec<&Node>>(),
+        vec![g.get_node(&0x2).unwrap()]
+    );
+
+    assert_eq!(
+        g.edges_directed(&0x1, oscoin::Direction::Outgoing)
             .into_iter()
-            .map(|eref| g.get_node(eref.from))
-            .collect::<Vec<Option<&Node>>>(),
-        vec![g.get_node(&0x2)]
+            .map(|eref| g.get_edge(eref.id))
+            .collect::<Vec<Option<&Edge>>>(),
+        vec![g.get_edge(&0x3)]
     );
 
     *g.node_data_mut(&0x1).unwrap() = vec![("AA", Vec::new())];
