@@ -8,16 +8,28 @@ pub enum NodeType {
     Project,
 }
 
+/// Node data.
+type NodeData = NodeType;
+
 /// The type of an edge.
 pub enum EdgeType {
-    /// Contribution, user -> project, with strength metric.
-    ContributionToProject(u32),
-    /// Contribution, project -> user, with strength metric.
-    ContributionFromUser(u32),
+    /// Contribution, user -> project.
+    ContributionToProject,
+    /// Contribution, project -> user.
+    ContributionFromUser,
     /// Membership of a user in a project, project <-> user.
     ProjectMembership,
     /// One-way dependency between two projects, project -> project.
     ProjectDependency,
+}
+
+/// Edge data.
+pub struct EdgeData {
+    /// The type of edge.
+    edge_type: EdgeType,
+    /// A strength factor for this edge. Eg. the number of contributions
+    /// on a contribution edge.
+    strength: f64,
 }
 
 /// The rank or "osrank" of a node, normalized to `1.0`.
@@ -32,4 +44,6 @@ pub struct HyperParameters {
     dampening_factor: f64,
     /// 'R' value.
     r_value: f64,
+    /// Weights for the different edge types.
+    edge_weights: HashMap<EdgeType, f64>,
 }
