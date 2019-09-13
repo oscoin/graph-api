@@ -40,8 +40,10 @@ pub struct HyperParameters {
     /// Threshold below which nodes are pruned in the first
     /// phase of the algorithm.
     pruning_threshold: f64,
-    /// How often do random walks return to the starting nodes.
-    damping_factor: f64,
+    /// How often do random walks on project nodes return to the starting nodes.
+    project_damping_factor: f64,
+    /// How often do random walks on user nodes return to the starting nodes.
+    user_damping_factor: f64,
     /// 'R' value.
     r_value: f64,
     /// Weights for the different edge types.
