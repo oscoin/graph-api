@@ -13,10 +13,9 @@ type NodeData = NodeType;
 
 /// The type of an edge.
 pub enum EdgeType {
-    /// Contribution, user -> project.
-    ContributionToProject,
-    /// Contribution, project -> user.
-    ContributionFromUser,
+    /// Contribution from a user to a project. This edge type is
+    /// used bi-directionally, between project and user.
+    Contribution,
     /// Membership of a user in a project, project <-> user.
     ProjectMembership,
     /// One-way dependency between two projects, project -> project.
