@@ -1,8 +1,5 @@
 #[deny(clippy::all)]
 ///! Graph API Traits
-///
-
-#[allow(dead_code)]
 
 /// Specifies a direction for an edge.
 #[derive(Debug, PartialEq, Eq)]
