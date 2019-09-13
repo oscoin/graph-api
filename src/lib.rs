@@ -89,12 +89,21 @@ pub trait GraphWriter: Graph + GraphDataWriter {
     fn nodes_mut(&mut self) -> NodesMut<Self::Node>;
 }
 
+/// A graph with mutable access to edge and node data.
 pub trait GraphDataWriter: Graph {
     /// Return a mutable reference to an edge's data, to annotate the edge.
     fn edge_data_mut(&mut self, id: &Id<Self::Edge>) -> Option<&mut Data<Self::Edge>>;
 
     /// Return a mutable reference to a node's data, to annotate the node.
     fn node_data_mut(&mut self, id: &Id<Self::Node>) -> Option<&mut Data<Self::Node>>;
+}
+
+/// An annotator for graphs.
+pub trait GraphAnnotator {
+    type Annotation;
+
+    /// Annotate the graph with some data.
+    fn annotate_graph(&mut self, note: Self::Annotation);
 }
 
 /// A read-only graph of nodes and edges.
@@ -139,9 +148,10 @@ pub trait Graph: Default {
 }
 
 /// A graph algorithm over a graph.
-pub trait GraphAlgorithm<G>
+pub trait GraphAlgorithm<G, A>
 where
-    G: GraphDataWriter,
+    G: Graph,
+    A: GraphAnnotator<Annotation = Self::Annotation>,
 {
     /// Mutable context of the execution.
     /// Can be used as a stateful cache.
@@ -158,13 +168,18 @@ where
     /// A seed suitable for an RNG.
     type RngSeed;
 
+    /// The type of annotation the algorithm will make
+    /// on the graph.
+    type Annotation;
+
     /// Execute an algorithm over a context and graph.
     /// Changes to the context will be persisted across
     /// executions of the algorithm.
     fn execute(
         &self,
         context: &mut Self::Context,
-        graph: &mut G,
+        graph: &G,
+        annotator: &mut A,
         seed: Self::RngSeed,
     ) -> Result<Self::Output, Self::Error>;
 }
