@@ -99,7 +99,10 @@ pub trait GraphDataWriter: Graph {
 pub trait GraphAnnotator {
     type Annotation;
 
-    /// Annotate the graph with some data.
+    /// Annotate the graph with some data. This is left intentionally abstract,
+    /// for the implementation to decide whether to expose a key/value like
+    /// interface with eg. `Annotation = (Key, Val)` or a batched interface
+    /// like `Annotation = Vec<(Key, Val)>`.
     fn annotate_graph(&mut self, note: Self::Annotation);
 }
 
