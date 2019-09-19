@@ -1,4 +1,4 @@
-# RFC 001 - Graph API
+# Graph API
 
 ## Introduction
 
