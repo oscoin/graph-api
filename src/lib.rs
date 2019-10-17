@@ -37,12 +37,17 @@ pub trait GraphObject {
 }
 
 /// A graph  node.
-pub trait Node<N>: GraphObject<Data = N> {}
+pub trait Node<N>: GraphObject<Data = N> {
+    /// Returns the type of this node.
+    fn node_type(&self) -> types::NodeType;
+}
 
 /// A graph edge between two nodes.
 pub trait Edge<W, E>: GraphObject<Data = E> {
     /// Get the edge weight.
     fn weight(&self) -> W;
+    /// Returns the type of this edge.
+    fn edge_type(&self) -> types::EdgeType;
 }
 
 /// The Graph API
@@ -76,7 +81,6 @@ pub trait GraphWriter: Graph + GraphDataWriter {
         id: Id<Self::Edge>,
         from: &Id<Self::Node>,
         to: &Id<Self::Node>,
-        weight: Self::Weight,
         data: Data<Self::Edge>,
     );
 

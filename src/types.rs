@@ -1,8 +1,13 @@
 //! Concrete node and edge types used in the registry.
 
+extern crate quickcheck;
+
+use quickcheck::{Arbitrary, Gen};
 use std::collections::HashMap;
+use std::hash::Hash;
 
 /// The type of a node.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NodeType {
     /// A user, eg. contributor, project member etc.
     User,
@@ -10,26 +15,58 @@ pub enum NodeType {
     Project,
 }
 
+impl Arbitrary for NodeType {
+    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        if g.next_u32() % 2 == 0 {
+            Self::User
+        } else {
+            Self::Project
+        }
+    }
+}
+
 /// Node data.
-pub struct NodeData {
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct NodeData<W> {
+    /// The type for this node.
+    pub node_type: NodeType,
     /// The total contributions by this user, to *all* projects, if any.
     pub total_contributions: Option<u32>,
+    pub rank: NodeRank<W>,
+}
+
+impl<W> Arbitrary for NodeData<W>
+where
+    W: Arbitrary,
+{
+    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        NodeData {
+            node_type: Arbitrary::arbitrary(g),
+            total_contributions: Arbitrary::arbitrary(g),
+            rank: Arbitrary::arbitrary(g),
+        }
+    }
 }
 
 /// The type of an edge.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum EdgeType {
-    /// Contribution from a user to a project. This edge type is
-    /// used bi-directionally, between project and user.
-    Contribution,
-    /// Membership of a user in a project, project <-> user.
-    ProjectMembership,
+    /// Contribution from a project to a user.
+    Contrib,
+    /// Contribution from a user to a project.
+    ContribStar,
+    /// Membership of a user in a project, project -> user.
+    Maintain,
+    /// Membership of a user in a project, user -> project.
+    MaintainStar,
     /// One-way dependency between two projects, project -> project.
-    ProjectDependency,
+    Depend,
 }
 
 /// Edge data.
+#[derive(Debug, Clone)]
 pub struct EdgeData<W> {
-    /// The type of edge.
+    /// The type for this edge.
     pub edge_type: EdgeType,
     /// The weight of this specific edge. Can be used to weight for eg.
     /// edges with more contributions higher, or weigh certain dependencies
@@ -40,11 +77,26 @@ pub struct EdgeData<W> {
 }
 
 /// The rank or "osrank" of a node, normalized to `1.0`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NodeRank<W> {
     pub rank: W,
 }
 
+// FIXME(adn) If we really want precise *bounded* ranks, then we need to
+// pull the `num::Bounded` trait from the `num` crate.
+impl<W> Arbitrary for NodeRank<W>
+where
+    W: Arbitrary,
+{
+    fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        NodeRank {
+            rank: Arbitrary::arbitrary(g),
+        }
+    }
+}
+
 /// Global parameters used by the graph algorithm.
+#[derive(Debug)]
 pub struct HyperParameters<W> {
     /// Also `tau`. Threshold below which nodes are pruned in the first
     /// phase of the algorithm.
