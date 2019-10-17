@@ -1,5 +1,6 @@
 #[deny(clippy::all)]
 ///! Graph API Traits
+pub mod types;
 
 /// Specifies a direction for an edge.
 #[derive(Debug, PartialEq, Eq)]

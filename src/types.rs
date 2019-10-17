@@ -1,5 +1,7 @@
 //! Concrete node and edge types used in the registry.
 
+use std::collections::HashMap;
+
 /// The type of a node.
 pub enum NodeType {
     /// A user, eg. contributor, project member etc.
@@ -9,7 +11,10 @@ pub enum NodeType {
 }
 
 /// Node data.
-type NodeData = NodeType;
+pub struct NodeData {
+    /// The total contributions by this user, to *all* projects, if any.
+    pub total_contributions: Option<u32>,
+}
 
 /// The type of an edge.
 pub enum EdgeType {
@@ -23,29 +28,33 @@ pub enum EdgeType {
 }
 
 /// Edge data.
-pub struct EdgeData {
+pub struct EdgeData<W> {
     /// The type of edge.
-    edge_type: EdgeType,
+    pub edge_type: EdgeType,
     /// The weight of this specific edge. Can be used to weight for eg.
     /// edges with more contributions higher, or weigh certain dependencies
-    /// higher than others. Defaults to `1.0`.
-    weight: f64,
+    /// higher than others.
+    pub weight: W,
+    /// The contributions of the user towards a project, if any.
+    pub contributions: Option<u32>,
 }
 
 /// The rank or "osrank" of a node, normalized to `1.0`.
-pub type NodeRank = f64;
+pub struct NodeRank<W> {
+    pub rank: W,
+}
 
 /// Global parameters used by the graph algorithm.
-pub struct HyperParameters {
+pub struct HyperParameters<W> {
     /// Also `tau`. Threshold below which nodes are pruned in the first
     /// phase of the algorithm.
-    pruning_threshold: f64,
+    pub pruning_threshold: W,
     /// Probability that a random walk on a project node continues.
-    project_damping_factor: f64,
+    pub project_damping_factor: W,
     /// Probability that a random walk on a user node continues.
-    user_damping_factor: f64,
+    pub user_damping_factor: W,
     /// 'R' value.
-    r_value: f64,
+    pub r_value: u32,
     /// Weights for the different edge types.
-    edge_weights: HashMap<EdgeType, f64>,
+    pub edge_weights: HashMap<EdgeType, W>,
 }
