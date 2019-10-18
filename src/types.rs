@@ -1,10 +1,13 @@
 //! Concrete node and edge types used in the registry.
 
+extern crate num_traits;
 extern crate quickcheck;
 
+use num_traits::Zero;
 use quickcheck::{Arbitrary, Gen};
 use std::collections::HashMap;
 use std::hash::Hash;
+use std::ops::Add;
 
 /// The type of a node.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -64,7 +67,7 @@ pub enum EdgeType {
 }
 
 /// Edge data.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct EdgeData<W> {
     /// The type for this edge.
     pub edge_type: EdgeType,
@@ -80,6 +83,29 @@ pub struct EdgeData<W> {
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct NodeRank<W> {
     pub rank: W,
+}
+
+impl<W: Add<Output = W>> Add for NodeRank<W> {
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self {
+        NodeRank {
+            rank: self.rank + other.rank,
+        }
+    }
+}
+
+impl<W> Zero for NodeRank<W>
+where
+    W: Zero,
+{
+    fn zero() -> Self {
+        NodeRank { rank: W::zero() }
+    }
+
+    fn is_zero(&self) -> bool {
+        self.rank.is_zero()
+    }
 }
 
 // FIXME(adn) If we really want precise *bounded* ranks, then we need to
