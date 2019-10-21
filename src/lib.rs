@@ -43,7 +43,11 @@ pub trait Node<N>: GraphObject<Data = N> {
 }
 
 /// A graph edge between two nodes.
-pub trait Edge<W, E>: GraphObject<Data = E> {
+pub trait Edge<W, NodeId, E>: GraphObject<Data = E> {
+    /// The source node.
+    fn source(&self) -> &NodeId;
+    /// The target node
+    fn target(&self) -> &NodeId;
     /// Get the edge weight.
     fn weight(&self) -> W;
     /// Returns the type of this edge.
@@ -91,6 +95,15 @@ pub trait GraphWriter: Graph + GraphDataWriter {
     fn nodes_mut(&mut self) -> NodesMut<Self::Node>;
 }
 
+/// A graph with read-only access to edge and node data.
+pub trait GraphDataReader: Graph {
+    /// Return an immutable reference to an edge's data.
+    fn edge_data(&self, id: &Id<Self::Edge>) -> Option<&Data<Self::Edge>>;
+
+    /// Return an immutable reference to a node's data, to annotate the node.
+    fn node_data(&self, id: &Id<Self::Node>) -> Option<&Data<Self::Node>>;
+}
+
 /// A graph with mutable access to edge and node data.
 pub trait GraphDataWriter: Graph {
     /// Return a mutable reference to an edge's data, to annotate the edge.
@@ -117,7 +130,7 @@ pub trait Graph: Default {
     type Node: Node<Self::NodeData>;
 
     /// A graph edge between nodes.
-    type Edge: Edge<Self::Weight, Self::EdgeData>;
+    type Edge: Edge<Self::Weight, <Self::Node as GraphObject>::Id, Self::EdgeData>;
 
     /// Data stored in graph nodes.
     type NodeData;

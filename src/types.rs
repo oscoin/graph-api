@@ -108,7 +108,7 @@ where
     }
 }
 
-// FIXME(adn) If we really want precise *bounded* ranks, then we need to
+// TODO(adn) If we really want precise *bounded* ranks, then we need to
 // pull the `num::Bounded` trait from the `num` crate.
 impl<W> Arbitrary for NodeRank<W>
 where
@@ -121,18 +121,34 @@ where
     }
 }
 
+/// Global DampingFactors used by the graph algorithm.
+#[derive(Clone, Debug)]
+pub struct DampingFactors {
+    /// Probability that a random walk on a project node continues.
+    pub project: f64,
+    /// Probability that a random walk on a user node continues.
+    pub account: f64,
+}
+
 /// Global parameters used by the graph algorithm.
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct HyperParameters<W> {
     /// Also `tau`. Threshold below which nodes are pruned in the first
     /// phase of the algorithm.
     pub pruning_threshold: W,
-    /// Probability that a random walk on a project node continues.
-    pub project_damping_factor: W,
-    /// Probability that a random walk on a user node continues.
-    pub user_damping_factor: W,
+    pub damping_factors: DampingFactors,
     /// 'R' value.
     pub r_value: u32,
     /// Weights for the different edge types.
     pub edge_weights: HashMap<EdgeType, W>,
+}
+
+impl<W> HyperParameters<W> {
+    /// Get the hyper value associated to the input `EdgeType`. It panics at
+    /// runtime if the value cannot be found.
+    pub fn get_param(&self, edge_type: &EdgeType) -> &W {
+        self.edge_weights
+            .get(edge_type)
+            .unwrap_or_else(|| panic!("hyperparam value for {:#?} not found.", edge_type))
+    }
 }
