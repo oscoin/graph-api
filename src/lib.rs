@@ -2,6 +2,8 @@
 ///! Graph API Traits
 pub mod types;
 
+use crate::types::EdgeType;
+
 /// Specifies a direction for an edge.
 #[derive(Debug, PartialEq, Eq)]
 pub enum Direction {
@@ -248,6 +250,7 @@ pub struct EdgeRef<'a, NodeId, EdgeId> {
     pub from: &'a NodeId,
     pub to: &'a NodeId,
     pub id: &'a EdgeId,
+    pub edge_type: &'a EdgeType,
 }
 
 pub type EdgeRefs<'a, N, E> = Vec<EdgeRef<'a, N, E>>;

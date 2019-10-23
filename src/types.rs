@@ -52,7 +52,7 @@ where
 }
 
 /// The type of an edge.
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum EdgeType {
     /// Contribution from a project to a user.
     Contrib,
