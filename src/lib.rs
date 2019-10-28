@@ -102,7 +102,7 @@ pub trait GraphDataReader: Graph {
     /// Return an immutable reference to an edge's data.
     fn edge_data(&self, id: &Id<Self::Edge>) -> Option<&Data<Self::Edge>>;
 
-    /// Return an immutable reference to a node's data, to annotate the node.
+    /// Return an immutable reference to a node's data.
     fn node_data(&self, id: &Id<Self::Node>) -> Option<&Data<Self::Node>>;
 }
 
