@@ -225,7 +225,7 @@ impl oscoin::GraphWriter for Network {
                 to: *to,
                 weight: 0.0,
                 data,
-                edge_type: types::EdgeType::Contrib,
+                edge_type: types::EdgeType::ContributionFromUser,
             },
         );
     }

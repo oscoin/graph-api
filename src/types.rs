@@ -54,16 +54,16 @@ where
 /// The type of an edge.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum EdgeType {
-    /// Contribution from a project to a user.
-    Contrib,
-    /// Contribution from a user to a project.
-    ContribStar,
-    /// Membership of a user in a project, project -> user.
-    Maintain,
-    /// Membership of a user in a project, user -> project.
-    MaintainStar,
-    /// One-way dependency between two projects, project -> project.
-    Depend,
+    /// Contribution from a project to a user. Corresponds to `contrib` from the paper.
+    ContributionFromUser,
+    /// Contribution from a user to a project. Corresponds to `contribᵒ` from the paper.
+    ContributionToProject,
+    /// Membership of a user in a project. Corresponds to `maintain` from the paper.
+    MaintenanceFromUser,
+    /// Membership of a user in a project. Correspond to `maintainᵒ` from the paper.
+    Maintenance,
+    /// One-way dependency between two projects. Correspond to `depend` from the paper.
+    Dependency,
 }
 
 /// Edge data.
