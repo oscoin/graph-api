@@ -1,13 +1,16 @@
 //! Concrete node and edge types used in the registry.
 
 extern crate num_traits;
+#[cfg(feature = "quickcheck")]
 extern crate quickcheck;
 
 use num_traits::Zero;
-use quickcheck::{Arbitrary, Gen};
 use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Add;
+
+#[cfg(feature = "quickcheck")]
+use quickcheck::{Arbitrary, Gen};
 
 /// The type of a node.
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -18,6 +21,7 @@ pub enum NodeType {
     Project,
 }
 
+#[cfg(feature = "quickcheck")]
 impl Arbitrary for NodeType {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         if g.next_u32() % 2 == 0 {
@@ -38,6 +42,7 @@ pub struct NodeData<W> {
     pub rank: NodeRank<W>,
 }
 
+#[cfg(feature = "quickcheck")]
 impl<W> Arbitrary for NodeData<W>
 where
     W: Arbitrary,
@@ -108,6 +113,7 @@ where
     }
 }
 
+#[cfg(feature = "quickcheck")]
 // TODO(adn) If we really want precise *bounded* ranks, then we need to
 // pull the `num::Bounded` trait from the `num` crate.
 impl<W> Arbitrary for NodeRank<W>
