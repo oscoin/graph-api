@@ -60,13 +60,13 @@ where
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum EdgeType {
     /// Contribution from a project to a user. Corresponds to `contrib` from the paper.
-    ContributionFromUser,
+    ProjectToUserContribution,
     /// Contribution from a user to a project. Corresponds to `contribᵒ` from the paper.
-    ContributionToProject,
-    /// Membership of a user in a project. Corresponds to `maintain` from the paper.
-    MaintenanceFromUser,
-    /// Membership of a user in a project. Correspond to `maintainᵒ` from the paper.
-    Maintenance,
+    UserToProjectContribution,
+    /// Membership relation from a project to a user. Corresponds to `maintain` from the paper.
+    ProjectToUserMembership,
+    /// Membership relation from a user to a project. Correspond to `maintainᵒ` from the paper.
+    UserToProjectMembership,
     /// One-way dependency between two projects. Correspond to `depend` from the paper.
     Dependency,
 }

@@ -336,14 +336,14 @@ mod ledger {
                     self::edge_id(node_id, c.node_id),
                     &node_id,
                     &c.node_id,
-                    types::EdgeType::ContributionFromUser,
+                    types::EdgeType::ProjectToUserContribution,
                 );
                 // Add `contribution -> project` link.
                 graph.add_edge(
                     self::edge_id(node_id, c.node_id),
                     &c.node_id,
                     &node_id,
-                    types::EdgeType::ContributionToProject,
+                    types::EdgeType::UserToProjectContribution,
                 );
             }
         }
