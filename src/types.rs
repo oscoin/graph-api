@@ -103,19 +103,53 @@ where
     }
 }
 
-/// The type of an edge.
+/// The type of an edge. When allowed, it bundles together the number of
+/// contributions.
 #[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
 pub enum EdgeType {
     /// Contribution from a project to a user. Corresponds to `contrib` from the paper.
-    ProjectToUserContribution,
+    ProjectToUserContribution(u32),
     /// Contribution from a user to a project. Corresponds to `contribᵒ` from the paper.
-    UserToProjectContribution,
+    UserToProjectContribution(u32),
     /// Membership relation from a project to a user. Corresponds to `maintain` from the paper.
-    ProjectToUserMembership,
+    ProjectToUserMembership(u32),
     /// Membership relation from a user to a project. Correspond to `maintainᵒ` from the paper.
-    UserToProjectMembership,
+    UserToProjectMembership(u32),
     /// One-way dependency between two projects. Correspond to `depend` from the paper.
     Dependency,
+}
+
+/// A companion tag for an `EdgeType`, to allow the former to be used as a key
+/// in a `HashMap`.
+#[derive(Debug, Clone, PartialEq, Eq, Hash, PartialOrd, Ord)]
+pub enum EdgeTypeTag {
+    ProjectToUserContribution,
+    UserToProjectContribution,
+    ProjectToUserMembership,
+    UserToProjectMembership,
+    Dependency,
+}
+
+impl EdgeType {
+    pub fn to_tag(&self) -> EdgeTypeTag {
+        match self {
+            EdgeType::ProjectToUserContribution(_) => EdgeTypeTag::ProjectToUserContribution,
+            EdgeType::UserToProjectContribution(_) => EdgeTypeTag::UserToProjectContribution,
+            EdgeType::ProjectToUserMembership(_) => EdgeTypeTag::ProjectToUserMembership,
+            EdgeType::UserToProjectMembership(_) => EdgeTypeTag::UserToProjectMembership,
+            EdgeType::Dependency => EdgeTypeTag::Dependency,
+        }
+    }
+
+    pub fn total_contributions(&self) -> u32 {
+        match self {
+            EdgeType::ProjectToUserContribution(c) => *c,
+            EdgeType::UserToProjectContribution(c) => *c,
+            EdgeType::ProjectToUserMembership(c) => *c,
+            EdgeType::UserToProjectMembership(c) => *c,
+            EdgeType::Dependency => 0,
+        }
+    }
 }
 
 /// Edge data.
@@ -127,8 +161,6 @@ pub struct EdgeData<W> {
     /// edges with more contributions higher, or weigh certain dependencies
     /// higher than others.
     pub weight: W,
-    /// The contributions of the user towards a project, if any.
-    pub contributions: Option<u32>,
 }
 
 /// The rank or "osrank" of a node, normalized to `1.0`.
@@ -193,15 +225,15 @@ pub struct HyperParameters<W> {
     /// 'R' value.
     pub r_value: u32,
     /// Weights for the different edge types.
-    pub edge_weights: HashMap<EdgeType, W>,
+    pub edge_weights: HashMap<EdgeTypeTag, W>,
 }
 
 impl<W> HyperParameters<W> {
-    /// Get the hyper value associated to the input `EdgeType`. It panics at
+    /// Get the hyper value associated to the input `EdgeTypeTag`. It panics at
     /// runtime if the value cannot be found.
-    pub fn get_param(&self, edge_type: &EdgeType) -> &W {
+    pub fn get_param(&self, edge_type_tag: &EdgeTypeTag) -> &W {
         self.edge_weights
-            .get(edge_type)
-            .unwrap_or_else(|| panic!("hyperparam value for {:#?} not found.", edge_type))
+            .get(&edge_type_tag)
+            .unwrap_or_else(|| panic!("hyperparam value for {:#?} not found.", edge_type_tag))
     }
 }

@@ -360,14 +360,14 @@ mod ledger {
                     self::edge_id(node_id, c.node_id),
                     &node_id,
                     &c.node_id,
-                    types::EdgeType::ProjectToUserContribution,
+                    types::EdgeType::ProjectToUserContribution(c.contributions),
                 );
                 // Add `contribution -> project` link.
                 graph.add_edge(
                     self::edge_id(node_id, c.node_id),
                     &c.node_id,
                     &node_id,
-                    types::EdgeType::UserToProjectContribution,
+                    types::EdgeType::UserToProjectContribution(c.contributions),
                 );
 
                 // increment the total contributions.
