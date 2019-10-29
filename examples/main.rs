@@ -251,8 +251,18 @@ fn main() {
     use oscoin::{Graph, GraphDataWriter, GraphWriter};
 
     let mut g = Network::default();
-    g.add_node(0x1, types::NodeType::User);
-    g.add_node(0x2, types::NodeType::Project);
+    g.add_node(
+        0x1,
+        types::NodeType::User {
+            contributions_to_all_projects: 1,
+        },
+    );
+    g.add_node(
+        0x2,
+        types::NodeType::Project {
+            contributions_from_all_users: 1,
+        },
+    );
     g.add_edge(0x3, &0x1, &0x2, types::EdgeType::Dependency);
 
     assert_eq!(
@@ -268,14 +278,21 @@ fn main() {
         vec![g.get_edge(&0x3)]
     );
 
-    *g.node_data_mut(&0x1).unwrap() = types::NodeType::Project;
-    assert_eq!(g.get_node(&0x1).unwrap().data, types::NodeType::Project);
+    *g.node_data_mut(&0x1).unwrap() = types::NodeType::Project {
+        contributions_from_all_users: 2,
+    };
+    assert_eq!(
+        g.get_node(&0x1).unwrap().data,
+        types::NodeType::Project {
+            contributions_from_all_users: 2
+        }
+    );
 }
 
 mod ledger {
     use oscoin_graph_api as oscoin;
     use oscoin_graph_api::types;
-    use oscoin_graph_api::GraphWriter;
+    use oscoin_graph_api::{GraphDataWriter, GraphWriter};
 
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -289,6 +306,8 @@ mod ledger {
 
     struct Contrib {
         node_id: super::Id,
+        /// How many contributions.
+        contributions: u32,
     }
 
     // An example ledger implementation that uses the APIs defined.
@@ -316,7 +335,12 @@ mod ledger {
             let graph = self.api.graph_mut(&oscoin::Layer("osrank")).unwrap();
 
             // Add the new checkpoint node to the graph.
-            graph.add_node(node_id, types::NodeType::Project);
+            graph.add_node(
+                node_id,
+                types::NodeType::Project {
+                    contributions_from_all_users: 0,
+                },
+            );
 
             for d in deps.iter() {
                 let edge_id = self::edge_id(node_id, d.node_id);
@@ -345,6 +369,10 @@ mod ledger {
                     &node_id,
                     types::EdgeType::UserToProjectContribution,
                 );
+
+                // increment the total contributions.
+                let node_type = graph.node_data_mut(&node_id).unwrap();
+                node_type.add_contributions(c.contributions);
             }
         }
     }

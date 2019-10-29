@@ -16,18 +16,68 @@ use quickcheck::{Arbitrary, Gen};
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum NodeType {
     /// A user, eg. contributor, project member etc.
-    User,
+    User { contributions_to_all_projects: u32 },
     /// A project with users as members and contributors.
-    Project,
+    Project { contributions_from_all_users: u32 },
+}
+
+impl NodeType {
+    /// Increments the current contributions for this `NodeType` by 'c'.
+    pub fn add_contributions(&mut self, c: u32) {
+        match self {
+            NodeType::User {
+                contributions_to_all_projects,
+            } => {
+                *contributions_to_all_projects += c;
+            }
+            NodeType::Project {
+                contributions_from_all_users,
+            } => {
+                *contributions_from_all_users += c;
+            }
+        }
+    }
+
+    /// Set the contributions to the given value.
+    pub fn set_contributions(&mut self, c: u32) {
+        match self {
+            NodeType::User {
+                contributions_to_all_projects,
+            } => {
+                *contributions_to_all_projects = c;
+            }
+            NodeType::Project {
+                contributions_from_all_users,
+            } => {
+                *contributions_from_all_users = c;
+            }
+        }
+    }
+
+    pub fn total_contributions(&self) -> u32 {
+        match self {
+            NodeType::User {
+                contributions_to_all_projects,
+            } => *contributions_to_all_projects,
+            NodeType::Project {
+                contributions_from_all_users,
+            } => *contributions_from_all_users,
+        }
+    }
 }
 
 #[cfg(feature = "quickcheck")]
 impl Arbitrary for NodeType {
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
+        let contribs = Arbitrary::arbitrary(g);
         if g.next_u32() % 2 == 0 {
-            Self::User
+            Self::User {
+                contributions_to_all_projects: contribs,
+            }
         } else {
-            Self::Project
+            Self::Project {
+                contributions_from_all_users: contribs,
+            }
         }
     }
 }
@@ -37,8 +87,6 @@ impl Arbitrary for NodeType {
 pub struct NodeData<W> {
     /// The type for this node.
     pub node_type: NodeType,
-    /// The total contributions by this user, to *all* projects, if any.
-    pub total_contributions: Option<u32>,
     pub rank: NodeRank<W>,
 }
 
@@ -50,7 +98,6 @@ where
     fn arbitrary<G: Gen>(g: &mut G) -> Self {
         NodeData {
             node_type: Arbitrary::arbitrary(g),
-            total_contributions: Arbitrary::arbitrary(g),
             rank: Arbitrary::arbitrary(g),
         }
     }
