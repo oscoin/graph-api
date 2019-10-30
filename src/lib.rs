@@ -41,6 +41,14 @@ pub trait GraphObject {
 /// A graph  node.
 pub trait Node<N>: GraphObject<Data = N> {
     /// Returns the type of this node.
+    // NOTE(adinapoli) Here we are using the *concrete* `NodeType`, but
+    // at this stage it's unclear whether is useful/necessary to depend on the
+    // concrete type. That might be useful if the Registry & Osrank will agree
+    // on this same type and would require this to be the "lowest common
+    // denominator" when writing otherwise-polymorphic and abstract GraphAPI
+    // code. An alternative design could be remove this method and have
+    // library writers to use the `Data` here and require their functions to
+    // "known" how to convert from `Data` into a `NodeType`.
     fn node_type(&self) -> &types::NodeType;
 }
 
@@ -53,6 +61,7 @@ pub trait Edge<W, NodeId, E>: GraphObject<Data = E> {
     /// Get the edge weight.
     fn weight(&self) -> W;
     /// Returns the type of this edge.
+    // TODO(adinapoli) Same considerations as per `Node::node_type` apply.
     fn edge_type(&self) -> &types::EdgeType;
 }
 
@@ -250,6 +259,15 @@ pub struct EdgeRef<'a, NodeId, EdgeId> {
     pub from: &'a NodeId,
     pub to: &'a NodeId,
     pub id: &'a EdgeId,
+
+    // TODO(adinapoli) Here we are using the *concrete* `EdgeType`, because
+    // it's handy to get hold of the type of the edge for library consumers,
+    // without having to assume anything about the underlying structure of the
+    // edge's data. In this design we cannot use `G::EdgeData` directly, because
+    // we don't have a `G` in scope. A perhaps better design would be either to
+    // make `EdgeRef` polymorphic in `G` and use `Id<G::Node>` and `Id<G::Edge>`
+    // and have `edge_data: &'a G::EdgeData` or simply parameterise the `EdgeRef`
+    // from an additional `EdgeData/EdgeType` parameter.
     pub edge_type: &'a EdgeType,
 }
 
