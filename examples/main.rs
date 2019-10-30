@@ -1,19 +1,19 @@
 #![allow(dead_code)]
 use oscoin_graph_api as oscoin;
+use oscoin_graph_api::types;
 
 use std::collections::BTreeMap;
 
 /// Id shared by all objects.
 type Id = u64;
 
-/// Byte string.
-type Bytes = Vec<u8>;
+/// Data stored in nodes. For the sake of this example, we are interested only
+/// in the `NodeType`.
+type NodeData = types::NodeType;
 
-/// Data stored in nodes.
-type NodeData = Vec<(&'static str, Bytes)>;
-
-/// Data stored in edges.
-type EdgeData = Bytes;
+/// Data stored in edges. For the sake of this example, we are interested only
+/// in the `EdgeType`.
+type EdgeData = types::EdgeType;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Node {
@@ -21,7 +21,11 @@ pub struct Node {
     data: NodeData,
 }
 
-impl oscoin::Node<NodeData> for Node {}
+impl oscoin::Node<NodeData> for Node {
+    fn node_type(&self) -> &types::NodeType {
+        &self.data
+    }
+}
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct Edge {
@@ -32,9 +36,21 @@ pub struct Edge {
     weight: f64,
 }
 
-impl oscoin::Edge<f64, EdgeData> for Edge {
+impl oscoin::Edge<f64, Id, EdgeData> for Edge {
     fn weight(&self) -> f64 {
         self.weight
+    }
+
+    fn source(&self) -> &Id {
+        &self.from
+    }
+
+    fn target(&self) -> &Id {
+        &self.to
+    }
+
+    fn edge_type(&self) -> &types::EdgeType {
+        &self.data
     }
 }
 
@@ -155,12 +171,14 @@ impl oscoin::Graph for Network {
                     from: &e.from,
                     to: &e.to,
                     id: &e.id,
+                    edge_type: &e.data,
                 })
             } else if dir == oscoin::Direction::Incoming && e.to == *node {
                 refs.push(oscoin::EdgeRef {
                     from: &e.from,
                     to: &e.to,
                     id: &e.id,
+                    edge_type: &e.data,
                 })
             }
         }
@@ -171,6 +189,8 @@ impl oscoin::Graph for Network {
 
 impl oscoin::GraphWriter for Network {
     fn add_node(&mut self, id: oscoin::Id<Node>, data: NodeData) {
+        // For the sake of the example it doesn't matter which node type we
+        // pick.
         self.nodes.insert(id, Node { id, data });
     }
 
@@ -183,16 +203,17 @@ impl oscoin::GraphWriter for Network {
         id: oscoin::Id<Edge>,
         from: &oscoin::Id<Node>,
         to: &oscoin::Id<Node>,
-        weight: f64,
         data: EdgeData,
     ) {
+        // In this example we are modelling the `EdgeData` as a bytes blob,
+        // but in practice we should be able to extract a weight out of that.
         self.edges.insert(
             id,
             Edge {
                 id,
                 from: *from,
                 to: *to,
-                weight,
+                weight: 0.0,
                 data,
             },
         );
@@ -230,9 +251,19 @@ fn main() {
     use oscoin::{Graph, GraphDataWriter, GraphWriter};
 
     let mut g = Network::default();
-    g.add_node(0x1, vec![("A", Vec::new())]);
-    g.add_node(0x2, vec![("B", Vec::new())]);
-    g.add_edge(0x3, &0x1, &0x2, 1.0, vec![]);
+    g.add_node(
+        0x1,
+        types::NodeType::User {
+            contributions_to_all_projects: 1,
+        },
+    );
+    g.add_node(
+        0x2,
+        types::NodeType::Project {
+            contributions_from_all_users: 1,
+        },
+    );
+    g.add_edge(0x3, &0x1, &0x2, types::EdgeType::Dependency);
 
     assert_eq!(
         g.neighbors(&0x1).collect::<Vec<&Node>>(),
@@ -247,13 +278,21 @@ fn main() {
         vec![g.get_edge(&0x3)]
     );
 
-    *g.node_data_mut(&0x1).unwrap() = vec![("AA", Vec::new())];
-    assert_eq!(g.get_node(&0x1).unwrap().data, vec![("AA", Vec::new())]);
+    *g.node_data_mut(&0x1).unwrap() = types::NodeType::Project {
+        contributions_from_all_users: 2,
+    };
+    assert_eq!(
+        g.get_node(&0x1).unwrap().data,
+        types::NodeType::Project {
+            contributions_from_all_users: 2
+        }
+    );
 }
 
 mod ledger {
     use oscoin_graph_api as oscoin;
-    use oscoin_graph_api::GraphWriter;
+    use oscoin_graph_api::types;
+    use oscoin_graph_api::{GraphDataWriter, GraphWriter};
 
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
@@ -267,22 +306,8 @@ mod ledger {
 
     struct Contrib {
         node_id: super::Id,
-    }
-
-    enum EdgeType {
-        Dependency = 0x01,
-        ContributionFrom = 0x02,
-        ContributionTo = 0x03,
-    }
-
-    impl EdgeType {
-        pub fn weight(&self) -> f64 {
-            match self {
-                EdgeType::Dependency => 0.7,
-                EdgeType::ContributionFrom => 0.3,
-                EdgeType::ContributionTo => 0.3,
-            }
-        }
+        /// How many contributions.
+        contributions: u32,
     }
 
     // An example ledger implementation that uses the APIs defined.
@@ -297,8 +322,8 @@ mod ledger {
         fn checkpoint(
             &mut self,
             id: super::Id,
-            version: &[u8],
-            hash: H256,
+            _version: &[u8],
+            _hash: H256,
             deps: &[Dep],
             contribs: &[Contrib],
         ) {
@@ -309,11 +334,12 @@ mod ledger {
             // Get a mutable ref to the osrank graph.
             let graph = self.api.graph_mut(&oscoin::Layer("osrank")).unwrap();
 
-            // Add the new checkpoint node to the graph. We annotate it with the project
-            // version and project hash.
+            // Add the new checkpoint node to the graph.
             graph.add_node(
                 node_id,
-                vec![("version", version.to_vec()), ("hash", hash.to_vec())],
+                types::NodeType::Project {
+                    contributions_from_all_users: 0,
+                },
             );
 
             for d in deps.iter() {
@@ -322,13 +348,7 @@ mod ledger {
                 // If we're adding a dependency, add a `project -> project` link.
                 // If we're removing one, remove the link.
                 if d.is_added {
-                    graph.add_edge(
-                        edge_id,
-                        &node_id,
-                        &d.node_id,
-                        1.0,
-                        vec![EdgeType::Dependency as u8],
-                    );
+                    graph.add_edge(edge_id, &node_id, &d.node_id, types::EdgeType::Dependency);
                 } else {
                     graph.remove_edge(edge_id);
                 }
@@ -340,17 +360,19 @@ mod ledger {
                     self::edge_id(node_id, c.node_id),
                     &node_id,
                     &c.node_id,
-                    EdgeType::ContributionFrom.weight(),
-                    vec![EdgeType::ContributionFrom as u8],
+                    types::EdgeType::ProjectToUserContribution(c.contributions),
                 );
                 // Add `contribution -> project` link.
                 graph.add_edge(
                     self::edge_id(node_id, c.node_id),
                     &c.node_id,
                     &node_id,
-                    EdgeType::ContributionTo.weight(),
-                    vec![EdgeType::ContributionTo as u8],
+                    types::EdgeType::UserToProjectContribution(c.contributions),
                 );
+
+                // increment the total contributions.
+                let node_type = graph.node_data_mut(&node_id).unwrap();
+                node_type.add_contributions(c.contributions);
             }
         }
     }
