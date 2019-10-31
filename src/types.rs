@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use std::hash::Hash;
 use std::ops::Add;
 
+use super::{Graph, Id};
+
 #[cfg(feature = "quickcheck")]
 use quickcheck::{Arbitrary, Gen};
 
@@ -235,5 +237,61 @@ impl<W> HyperParameters<W> {
         self.edge_weights
             .get(&edge_type_tag)
             .unwrap_or_else(|| panic!("hyperparam value for {:#?} not found.", edge_type_tag))
+    }
+}
+
+/* Concrete types for the incremental MonteCarlo algorithm. */
+
+/// This is an enumeration of all the possible ways in which a `Graph` can be
+/// mutated/transformed between two Osrank invocations.
+pub enum GraphDiff<'a, G: 'a>
+where
+    G: Graph,
+{
+    /// A new node has been added to the network.
+    NodeAdded(&'a Id<G::Node>),
+    /// An existing node has been deleted from the network. We require full
+    /// ownership over the `G::Node` because once the registry deleted it from
+    /// the network we cannot query the network anymore to fetch more interesting
+    /// data out of it.
+    NodeDeleted(G::Node),
+    /// A `Node` has been updated. For now updates are not relevant to `Osrank`,
+    /// but they might in the future.
+    NodeUpdated(&'a Id<G::Node>),
+    /// A new edge has been added to the network.
+    EdgeAdded {
+        id: &'a Id<G::Edge>,
+        source: &'a Id<G::Node>,
+        target: &'a Id<G::Node>,
+    },
+    /// An existing edge has been deleted from the network. We require full
+    /// ownership over the `G::Edge` for the same reasons of `NodeDeleted`.
+    EdgeDeleted(G::Edge),
+    // NOTE: There is no `EdgeUpdated` by design: this is because the only
+    // reason why an edge might be updated is either to change "Direction"
+    // (which seems unlikely and wrong to begin with) or to bump the number
+    // of contributions. But in a "multi-version" world like this one, this is
+    // *not* what happens. Rather, every time a new contributions contributes
+    // you do *not* update an existing node but rather the next checkpoint a brand
+    // new edge is added (with the new contributions) and a new *project version*
+    // is released.
+}
+
+/// An Iterator over a collection of `GraphDiff`.
+pub struct GraphDiffs<'a, G: 'a>
+where
+    G: Graph,
+{
+    pub range: std::vec::IntoIter<&'a GraphDiff<'a, G>>,
+}
+
+impl<'a, G> Iterator for GraphDiffs<'a, G>
+where
+    G: Graph,
+{
+    type Item = &'a GraphDiff<'a, G>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.range.next()
     }
 }
